@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag and Drop File Upload</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="webcam-container">
+        <div class="webcamButtons">
+                <!-- Webcam toggle -->
+            <div class="toggle-container">
+                <span>Webcam</span> <!-- Webcam 문구 추가 -->
+                <label class="switch">
+                    <input type="checkbox" id="webcam-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <!-- Detection toggle -->
+            <div class="toggle-container">
+                <span>Detect</span> <!-- Detect 문구 추가 -->
+                <label class="switch">
+                    <input type="checkbox" id="detection-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+      
+        
+        <p id="webcam-status">Webcam Off</p>
+        <video id="webcam" autoplay playsinline></video>
+    </div>
+    <p>File conversion</p>
+    <div class="drop-zone" id="drop-zone">
+        드래그앤 드롭하거나 클릭해서 파일을 업로드하세요.
+        Drag and drop your files here or click to upload
+    </div>
+    <div class="file-list" id="file-list"></div>
+    <script src="index.js"></script>
+</body>
+</html>

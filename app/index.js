@@ -1,9 +1,17 @@
 const dropZone = document.getElementById('drop-zone');
 const fileList = document.getElementById('file-list');
 const webcamToggle = document.getElementById('webcam-toggle');
+const detectionToggle = document.getElementById('detection-toggle');
 const webcam = document.getElementById('webcam');
 const webcamStatus = document.getElementById('webcam-status');
 let webcamStream = null;
+
+const indexSettiong =  () => {
+    webcam.style.display = 'block';
+    webcamStatus.textContent = 'Webcam Off';
+    webcamToggle.checked = false;
+    detectionToggle.disabled = true;
+}
 
 // 드래그 앤 드롭 기능
 dropZone.addEventListener('dragover', (event) => {
@@ -42,7 +50,7 @@ function displayFiles(files) {
 }
 
 // 웹캠 온/오프 기능
-webcamToggle.addEventListener('change', async () => {
+webcamToggle.addEventListener('click', async () => {
     if (webcamToggle.checked) {
         // 웹캠 켜기
         try {
@@ -50,6 +58,7 @@ webcamToggle.addEventListener('change', async () => {
             webcam.srcObject = webcamStream;
             webcam.style.display = 'block';
             webcamStatus.textContent = 'Webcam On';
+            detectionToggle.disabled = false;
         } catch (error) {
             alert('Error accessing webcam: ' + error.message);
             webcamToggle.checked = false; // 에러 시 스위치 상태 복구
@@ -60,7 +69,11 @@ webcamToggle.addEventListener('change', async () => {
             webcamStream.getTracks().forEach(track => track.stop());
             webcamStream = null;
         }
-        webcam.style.display = 'none';
+        detectionToggle.checked = false;
+        detectionToggle.disabled = true;
+        //webcam.style.display = 'none';
         webcamStatus.textContent = 'Webcam Off';
     }
 });
+
+indexSettiong();

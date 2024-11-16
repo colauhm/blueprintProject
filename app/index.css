@@ -11,9 +11,8 @@ body {
 }
 
 .drop-zone {
-    width: 50%;
-    max-width: 400px;
-    height: 200px;
+    width: 400px;
+    height: 150px;
     border: 2px dashed #ccc;
     border-radius: 10px;
     display: flex;
@@ -39,9 +38,12 @@ body {
     margin-top: 30px;
     text-align: center;
 }
-
+.webcamButtons{
+    display: flex;
+    justify-content: center;
+}
 #webcam {
-    display: none;
+    display: block;
     width: 400px;
     height: 300px;
     border: 2px solid #ccc;
