@@ -7,12 +7,19 @@
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
+    <div class="webcam-container">
+        <label class="switch">
+            <input type="checkbox" id="webcam-toggle">
+            <span class="slider"></span>
+        </label>
+        <p id="webcam-status">Webcam Off</p>
+        <video id="webcam" autoplay playsinline></video>
+    </div>
     <div class="drop-zone" id="drop-zone">
         드래그앤 드롭하거나 클릭해서 파일을 업로드하세요.
         Drag and drop your files here or click to upload
     </div>
     <div class="file-list" id="file-list"></div>
-
     <script src="index.js"></script>
 </body>
 </html>
