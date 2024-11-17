@@ -1,3 +1,4 @@
+const serverUrl =  "http://localhost:8000";
 const dropZone = document.getElementById('drop-zone');
 const fileList = document.getElementById('file-list');
 const webcamToggle = document.getElementById('webcam-toggle');
