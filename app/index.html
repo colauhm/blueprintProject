@@ -30,13 +30,22 @@
       
         
         <p id="webcam-status">Webcam Off</p>
-        <video id="webcam" autoplay playsinline></video>
+
+        <div class="webcam-container" style="position: relative; display: inline-block;">
+            <video id="webcam" autoplay playsinline style="width: 100%;"></video>
+            <canvas id="canvas" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
+        </div>
+
     </div>
-    <p>File conversion</p>
-    <div class="drop-zone" id="drop-zone">
-        드래그앤 드롭하거나 클릭해서 파일을 업로드하세요.
-        Drag and drop your files here or click to upload
     </div>
+    <div class="file-conversion-box" id ="file-conversion-box">
+        <p>File conversion</p>
+        <div class="drop-zone" id="drop-zone">
+            드래그앤 드롭하거나 클릭해서 파일을 업로드하세요.
+            Drag and drop your files here or click to upload
+        </div>
+    </div>
+    
     <div class="file-list" id="file-list"></div>
     <script src="index.js"></script>
 </body>
