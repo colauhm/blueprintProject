@@ -42,12 +42,21 @@ dropZone.addEventListener('click', () => {
 
 function displayFiles(files) {
     fileList.innerHTML = ''; // 기존 파일 목록 제거
+    const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'webm', 'avi']; // 허용되는 확장자
+
     Array.from(files).forEach(file => {
-        const listItem = document.createElement('div');
-        listItem.textContent = file.name;
-        fileList.appendChild(listItem);
+        const fileExtension = file.name.split('.').pop().toLowerCase(); // 확장자 추출
+        //console.log(fileExtension);
+        if (validExtensions.includes(fileExtension)) {
+            const listItem = document.createElement('div');
+            listItem.textContent = file.name;
+            fileList.appendChild(listItem);
+        } else {
+            alert(`유효하지 않은 파일 형태입니다: ${file.name}`);
+        }
     });
 }
+
 
 // 웹캠 온/오프 기능
 webcamToggle.addEventListener('click', async () => {
