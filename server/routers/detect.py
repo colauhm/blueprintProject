@@ -11,9 +11,8 @@ model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
 router = APIRouter(prefix="/api")
 
 class detectData(BaseModel):
-    file : UploadFile = File(...)
     type : str
-    fileFath : str
+    fileName : str
 
 
 @router.post("/detect_frame/")
@@ -26,10 +25,15 @@ async def upload_frame(data:detectData):
         if data.type == 'webcam':
             pass
         else:
-            file_path = data.fileFath
-            DETECT_FOLDER = "./after_detect"
-            os.makedirs(DETECT_FOLDER, exist_ok=True)  # 폴더가 없으면 생성
-            detect_file_path = os.path.join(DETECT_FOLDER, data.file.filename)
+            
+            BEFORE_DETECT_FOLDER = "./before_detect"
+            AFTER_DETECT_FOLDER = "./after_detect"
+
+            os.makedirs(AFTER_DETECT_FOLDER, exist_ok=True)  # 폴더가 없으면 생성
+            os.makedirs(BEFORE_DETECT_FOLDER, exist_ok=True)  # 폴더가 없으면 생성
+
+            detect_file_path = os.path.join(AFTER_DETECT_FOLDER, data.fileName)
+            file_path =  os.path.join(BEFORE_DETECT_FOLDER, data.fileName)
             if not os.path.exists(file_path):
                 return JSONResponse({"error": f"File not found: {file_path}"}, status_code=404)
                 
