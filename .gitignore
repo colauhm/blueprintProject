@@ -108,3 +108,13 @@ venv.bak/
 .idea/*
 
 *.pt
+
+# 사진 영상 업로드차단
+
+*jpg
+*jpeg
+*png
+*gif
+*mp4
+*webm
+*avi
