@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import detect
+from .routers import detect, file
 #from .database import fileload
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 app = FastAPI()
@@ -14,7 +14,7 @@ app.add_middleware(
 )
 
 app.include_router(detect.router)
-# app.include_router(user.router)
+app.include_router(file.router)
 # app.include_router(comment.router)
 # app.include_router(fileload.router)
 
