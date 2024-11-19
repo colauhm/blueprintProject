@@ -25,6 +25,33 @@ const indexSettiong = () => {
     detectionToggle.disabled = true;
 };
 
+// Webcam toggle functionality
+webcamToggle.addEventListener('change', async () => {
+    if (webcamToggle.checked) {
+        try {
+            webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            webcam.srcObject = webcamStream;
+            webcam.style.display = 'block';
+            canvas.style.display = 'none'; // Hide canvas until detection is enabled
+            webcamStatus.textContent = 'Webcam On';
+            detectionToggle.disabled = false; // Enable detection toggle
+        } catch (error) {
+            alert('Failed to access webcam: ' + error.message);
+            webcamToggle.checked = false;
+        }
+    } else {
+        if (webcamStream) {
+            const tracks = webcamStream.getTracks();
+            tracks.forEach(track => track.stop());
+            webcamStream = null;
+        }
+        webcam.style.display = 'none';
+        canvas.style.display = 'none';
+        webcamStatus.textContent = 'Webcam Off';
+        detectionToggle.disabled = true; // Disable detection toggle
+    }
+});
+
 // 드래그앤드롭 관련 이벤트
 dropZone.addEventListener('dragover', (event) => {
     event.preventDefault();

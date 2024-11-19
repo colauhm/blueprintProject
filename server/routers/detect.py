@@ -2,6 +2,7 @@ from fastapi import File, UploadFile, APIRouter
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional
+from fastapi.responses import StreamingResponse
 import cv2
 import numpy as np
 import torch
@@ -23,7 +24,44 @@ async def upload_frame(data:detectData):
     try:
      
         if data.type == 'webcam':
-            pass
+            # 웹캠 탐지
+            cap = cv2.VideoCapture(0)
+            if not cap.isOpened():
+                return JSONResponse({"error": "웹캠에 접근할 수 없습니다."}, status_code=400)
+
+            def webcam_frame_generator():
+                """
+                프레임을 처리하고 클라이언트에 스트리밍합니다.
+                """
+                while True:
+                    ret, frame = cap.read()
+                    if not ret:
+                        break
+
+                    # YOLO 모델로 객체 탐지
+                    results = model(frame)
+                    detection_frame = np.squeeze(results.render())  # 탐지 결과 시각화
+
+                    # 프레임을 JPEG로 인코딩
+                    _, jpeg_frame = cv2.imencode('.jpg', detection_frame)
+
+                    # 클라이언트에 현재 프레임 전송
+                    yield (
+                        b"--frame\r\n"
+                        b"Content-Type: image/jpeg\r\n\r\n" + jpeg_frame.tobytes() + b"\r\n"
+                    )
+
+                    # 'q' 키로 로컬 종료
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
+
+                # 리소스 정리
+                cap.release()
+                cv2.destroyAllWindows()
+
+            # 프레임을 스트리밍으로 반환
+            return StreamingResponse(webcam_frame_generator(), media_type="multipart/x-mixed-replace; boundary=frame")
+
         else:
             
             BEFORE_DETECT_FOLDER = "./before_detect"
