@@ -6,6 +6,7 @@ router = APIRouter(prefix="/api")
 
 # 업로드 폴더 설정
 UPLOAD_FOLDER = "./before_detect"
+DETECT_FOLDER = "./after_detect"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # 폴더가 없으면 생성
 
 # 파일 업로드 라우트 (단일 파일)
@@ -33,11 +34,13 @@ async def download_file(filename: str):
 
 @router.delete("/delete/{filename}")
 async def delete_file(filename: str):
-    file_path = os.path.join(UPLOAD_FOLDER, filename)
-    if not os.path.exists(file_path):
+    before_file_path = os.path.join(UPLOAD_FOLDER, filename)
+    after_file_path = os.path.join(DETECT_FOLDER, filename)
+    if not os.path.exists(UPLOAD_FOLDER):
         raise HTTPException(status_code=404, detail="File not found")
     try:
-        os.remove(file_path)
+        os.remove(before_file_path)
+        os.remove(after_file_path)
         return {"message": "File deleted successfully", "filename": filename}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"File deletion failed: {e}")

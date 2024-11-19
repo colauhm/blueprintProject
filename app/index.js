@@ -40,65 +40,94 @@ dropZone.addEventListener('drop', async (event) => {
     dropZone.classList.remove('drag-over');
     const files = event.dataTransfer.files;
     if (files.length > 0) {
-       await uploadAndPreview(files[0]); // 첫 번째 파일만 처리
+        const fileType = checkFileType(files[0]);
+        await uploadAndPreview(files[0], fileType); // Pass the file type
+      
     }
 });
 
 dropZone.addEventListener('click', () => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = 'image/*'; // 이미지 파일만 선택 가능
+    fileInput.accept = 'image/*,video/*'; // Allow both image and video files
     fileInput.addEventListener('change', async () => {
         if (fileInput.files.length > 0) {
-            await uploadAndPreview(fileInput.files[0]); // 첫 번째 파일만 처리
+            const fileType = checkFileType(fileInput.files[0]);
+            await uploadAndPreview(fileInput.files[0], fileType); 
+      
         }
     });
     fileInput.click();
 });
 
-async function uploadAndPreview(file) {
-    const validExtensions = ['jpg', 'jpeg', 'png', 'gif']; // 허용되는 이미지 확장자
-    const fileExtension = file.name.split('.').pop().toLowerCase(); // 확장자 추출
+// Helper function to check file type
+function checkFileType(file) {
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+    const videoExtensions = ['mp4', 'mov', 'avi', 'webm'];
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+
+    if (imageExtensions.includes(fileExtension)) {
+        return 'image';
+    } else if (videoExtensions.includes(fileExtension)) {
+        return 'video';
+    } else {
+        alert('Unsupported file type');
+        throw new Error('Unsupported file type');
+    }
+}
+
+async function uploadAndPreview(file, type) {
+    const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi', 'webm'];
+    const fileExtension = file.name.split('.').pop().toLowerCase();
 
     if (validExtensions.includes(fileExtension)) {
         try {
-            // FormData 객체 생성
             const formData = new FormData();
             formData.append('file', file);
 
-            // 서버로 파일 업로드
             const response = await fetch(`${serverUrl}/upload/`, {
                 method: 'POST',
                 body: formData,
             });
 
             if (!response.ok) {
-                throw new Error(`업로드 실패: ${file.name}`);
+                throw new Error(`Upload failed: ${file.name}`);
             }
 
-            // 업로드 성공 시 서버 응답 처리
             const result = await response.json();
-
-            // 파일 업로드 영역 숨기기
             dropZone.style.display = 'none';
 
-            // 미리보기 이미지와 새로고침 버튼 생성
+            // Detect file after successful upload
+            await detectFile(type, result.filename);
+
+            // Generate preview, refresh button, and download button after detection
             const previewContainer = document.createElement('div');
             previewContainer.style.display = 'flex';
+            previewContainer.style.flexDirection = 'column'; // Stack buttons vertically
             previewContainer.style.alignItems = 'center';
             previewContainer.style.gap = '10px';
 
-            // 미리보기 이미지
-            const previewImage = document.createElement('img');
-            previewImage.src = URL.createObjectURL(file); // 업로드된 파일 로컬 미리보기
-            previewImage.style.width = '100px'; // 이미지 크기를 작게 설정
-            previewImage.style.height = '100px';
-            previewImage.style.objectFit = 'cover';
-            previewImage.style.border = '1px solid #ddd';
+            // Generate preview from ./after_detect folder
+            const processedFileUrl = `${serverUrl}/after_detect/${result.filename}`;
+            if (type === 'image') {
+                const previewImage = document.createElement('img');
+                previewImage.src = processedFileUrl; // Use processed file for preview
+                previewImage.style.width = '100px';
+                previewImage.style.height = '100px';
+                previewImage.style.objectFit = 'cover';
+                previewImage.style.border = '1px solid #ddd';
+                previewContainer.appendChild(previewImage);
+            } else if (type === 'video') {
+                const previewVideo = document.createElement('video');
+                previewVideo.src = processedFileUrl; // Use processed file for preview
+                previewVideo.controls = true;
+                previewVideo.style.width = '200px';
+                previewVideo.style.height = '150px';
+                previewContainer.appendChild(previewVideo);
+            }
 
-            // 새로고침 버튼
             const refreshButton = document.createElement('button');
-            refreshButton.textContent = '새로고침';
+            refreshButton.textContent = 'Refresh';
             refreshButton.style.padding = '10px';
             refreshButton.style.backgroundColor = '#007bff';
             refreshButton.style.color = '#fff';
@@ -106,33 +135,56 @@ async function uploadAndPreview(file) {
             refreshButton.style.borderRadius = '5px';
             refreshButton.style.cursor = 'pointer';
 
-            // 새로고침 버튼 클릭 이벤트
             refreshButton.addEventListener('click', () => {
-                // 파일 업로드 영역 다시 표시
-                dropZone.style.display = 'flex'; // 중앙 정렬을 위해 'flex'로 설정
-                dropZone.classList.remove('drag-over'); // 드래그 상태 초기화
-            
-                // 미리보기 제거
+                dropZone.style.display = 'flex';
+                dropZone.classList.remove('drag-over');
                 fileList.innerHTML = '';
-                //console.log(result.filename)
-                refreshFile(result.filename)
+                refreshFile(result.filename);
             });
 
-            // 미리보기 컨테이너에 추가
-            previewContainer.appendChild(previewImage);
-            previewContainer.appendChild(refreshButton);
+            const downloadButton = document.createElement('a');
+            downloadButton.textContent = 'Download Processed File';
+            downloadButton.style.padding = '10px';
+            downloadButton.style.backgroundColor = '#28a745';
+            downloadButton.style.color = '#fff';
+            downloadButton.style.textDecoration = 'none';
+            downloadButton.style.border = 'none';
+            downloadButton.style.borderRadius = '5px';
+            downloadButton.style.cursor = 'pointer';
+            downloadButton.href = processedFileUrl; // Use processed file for download
+            downloadButton.download = result.filename;
 
-            // 파일 리스트에 추가
-            fileList.innerHTML = ''; // 기존 내용 제거
+            previewContainer.appendChild(refreshButton);
+            previewContainer.appendChild(downloadButton);
+
+            fileList.innerHTML = '';
             fileList.appendChild(previewContainer);
 
         } catch (error) {
-            alert(`파일 업로드 중 오류가 발생했습니다: ${file.name}, 오류: ${error.message}`);
+            alert(`Error during file upload: ${file.name}, Error: ${error.message}`);
         }
     } else {
-        alert(`유효하지 않은 파일 형태입니다: ${file.name}`);
+        alert(`Invalid file format: ${file.name}`);
     }
 }
+
+
+
+const detectFile = async (type, filename) => {
+    try {
+        const response = await fetch(`${serverUrl}/detect_frame/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type, fileName: filename }),
+        });
+
+        const result = await response.json();
+        console.log(result);
+    } catch (error) {
+        console.error('Error during file detection:', error.message);
+    }
+};
+
 
 const refreshFile = async (filename) => {
     try {
@@ -146,12 +198,13 @@ const refreshFile = async (filename) => {
         }
 
         const result = await response.json();
-        console.log(result.message); // 성공 메시지 출력
-        alert('새로고침 완료');
+        alert('Refresh successful');
     } catch (error) {
-        console.error('파일 삭제 중 오류 발생:', error.message);
-        alert(`파일 삭제 실패: ${error.message}`);
+        console.error('Error during file deletion:', error.message);
+        alert(`File deletion failed: ${error.message}`);
     }
 };
+
+
 
 indexSettiong();

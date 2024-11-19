@@ -97,7 +97,7 @@ async def upload_frame(data:detectData):
 
                 return JSONResponse({
                     "detections": detections_list,
-                    "video_path": detect_file_path
+                    "saved_path": detect_file_path
                 })
 
             else:
