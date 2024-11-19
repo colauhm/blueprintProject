@@ -1,4 +1,5 @@
 const serverUrl = "http://localhost:8088/api";
+const videoStream = document.getElementById("video-stream");
 const ws = new WebSocket("ws://localhost:8088/api/ws"); // FastAPI WebSocket URL
 const dropZone = document.getElementById('drop-zone');
 const fileList = document.getElementById('file-list');
@@ -24,7 +25,6 @@ webcamToggle.addEventListener('change', async () => {
             webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
             webcam.srcObject = webcamStream;
             webcam.style.display = 'block';
-            canvas.style.display = 'none'; // Hide canvas until detection is enabled
             webcamStatus.textContent = 'Webcam On';
             detectionToggle.disabled = false; // Enable detection toggle
         } catch (error) {
@@ -38,7 +38,6 @@ webcamToggle.addEventListener('change', async () => {
             webcamStream = null;
         }
         webcam.style.display = 'none';
-        canvas.style.display = 'none';
         webcamStatus.textContent = 'Webcam Off';
         detectionToggle.disabled = true; // Disable detection toggle
     }
@@ -46,6 +45,10 @@ webcamToggle.addEventListener('change', async () => {
 
 detectionToggle.addEventListener('change', async () =>{
     if(detectionToggle.checked){
+        
+        const tracks = webcamStream.getTracks();
+        tracks.forEach(track => track.stop());
+        webcamStream = null;
         ws.onmessage = (event) => {
             // WebSocket 메시지를 받아 이미지로 변환
             const base64Image = event.data;
