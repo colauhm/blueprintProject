@@ -23,7 +23,7 @@ const indexSettiong = () => {
     webcamStatus.textContent = 'Webcam Off';
     webcamToggle.checked = false;
     detectionToggle.disabled = true;
-}
+};
 
 // 드래그앤드롭 관련 이벤트
 dropZone.addEventListener('dragover', (event) => {
@@ -39,169 +39,97 @@ dropZone.addEventListener('drop', (event) => {
     event.preventDefault();
     dropZone.classList.remove('drag-over');
     const files = event.dataTransfer.files;
-    displayFiles(files);
+    if (files.length > 0) {
+        uploadAndPreview(files[0]); // 첫 번째 파일만 처리
+    }
 });
 
 dropZone.addEventListener('click', () => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.multiple = true;
+    fileInput.accept = 'image/*'; // 이미지 파일만 선택 가능
     fileInput.addEventListener('change', () => {
-        displayFiles(fileInput.files);
+        if (fileInput.files.length > 0) {
+            uploadAndPreview(fileInput.files[0]); // 첫 번째 파일만 처리
+        }
     });
     fileInput.click();
 });
 
-function displayFiles(files) {
-    fileList.innerHTML = ''; // 기존 파일 목록 제거
-    const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'webm', 'avi']; // 허용되는 확장자
+async function uploadAndPreview(file) {
+    const validExtensions = ['jpg', 'jpeg', 'png', 'gif']; // 허용되는 이미지 확장자
+    const fileExtension = file.name.split('.').pop().toLowerCase(); // 확장자 추출
 
-    Array.from(files).forEach(file => {
-        const fileExtension = file.name.split('.').pop().toLowerCase(); // 확장자 추출
-        if (validExtensions.includes(fileExtension)) {
-            const listItem = document.createElement('div');
-            listItem.textContent = file.name;
-            fileList.appendChild(listItem);
-        } else {
-            alert(`유효하지 않은 파일 형태입니다: ${file.name}`);
-        }
-    });
-}
-
-// 웹캠 온/오프 설정
-webcamToggle.addEventListener('click', async () => {
-    if (webcamToggle.checked) {
-        // 웹캠 켜기
+    if (validExtensions.includes(fileExtension)) {
         try {
-            webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
-            webcam.srcObject = webcamStream;
+            // FormData 객체 생성
+            const formData = new FormData();
+            formData.append('file', file);
 
-            // 드래그앤드롭 박스 숨기기
-            fileConversionBox.style.display = "none";
-
-            // 캔버스 위치 및 크기 설정
-            webcam.addEventListener('loadeddata', () => {
-                canvas.width = webcam.videoWidth;
-                canvas.height = webcam.videoHeight;
-                canvas.style.width = `${webcam.offsetWidth}px`;
-                canvas.style.height = `${webcam.offsetHeight}px`;
-                canvas.style.top = `${webcam.offsetTop}px`;
-                canvas.style.left = `${webcam.offsetLeft}px`;
+            // 서버로 파일 업로드
+            const response = await fetch(`${serverUrl}/upload/`, {
+                method: 'POST',
+                body: formData,
             });
 
-            webcam.style.display = 'block';
-            webcamStatus.textContent = 'Webcam On';
-            detectionToggle.disabled = false;
+            if (!response.ok) {
+                throw new Error(`업로드 실패: ${file.name}`);
+            }
+
+            // 업로드 성공 시 서버 응답 처리
+            const result = await response.json();
+
+            // 파일 업로드 영역 숨기기
+            dropZone.style.display = 'none';
+
+            // 미리보기 이미지와 새로고침 버튼 생성
+            const previewContainer = document.createElement('div');
+            previewContainer.style.display = 'flex';
+            previewContainer.style.alignItems = 'center';
+            previewContainer.style.gap = '10px';
+
+            // 미리보기 이미지
+            const previewImage = document.createElement('img');
+            previewImage.src = URL.createObjectURL(file); // 업로드된 파일 로컬 미리보기
+            previewImage.style.width = '100px'; // 이미지 크기를 작게 설정
+            previewImage.style.height = '100px';
+            previewImage.style.objectFit = 'cover';
+            previewImage.style.border = '1px solid #ddd';
+
+            // 새로고침 버튼
+            const refreshButton = document.createElement('button');
+            refreshButton.textContent = '새로고침';
+            refreshButton.style.padding = '10px';
+            refreshButton.style.backgroundColor = '#007bff';
+            refreshButton.style.color = '#fff';
+            refreshButton.style.border = 'none';
+            refreshButton.style.borderRadius = '5px';
+            refreshButton.style.cursor = 'pointer';
+
+            // 새로고침 버튼 클릭 이벤트
+            refreshButton.addEventListener('click', () => {
+                // 파일 업로드 영역 다시 표시
+                dropZone.style.display = 'flex'; // 중앙 정렬을 위해 'flex'로 설정
+                dropZone.classList.remove('drag-over'); // 드래그 상태 초기화
+            
+                // 미리보기 제거
+                fileList.innerHTML = '';
+            });
+
+            // 미리보기 컨테이너에 추가
+            previewContainer.appendChild(previewImage);
+            previewContainer.appendChild(refreshButton);
+
+            // 파일 리스트에 추가
+            fileList.innerHTML = ''; // 기존 내용 제거
+            fileList.appendChild(previewContainer);
+
         } catch (error) {
-            alert('Error accessing webcam: ' + error.message);
-            webcamToggle.checked = false;
+            alert(`파일 업로드 중 오류가 발생했습니다: ${file.name}, 오류: ${error.message}`);
         }
     } else {
-        // 웹캠 끄기
-        if (webcamStream) {
-            webcamStream.getTracks().forEach(track => track.stop());
-            webcamStream = null;
-        }
-
-        // 드래그앤드롭 박스 표시
-        fileConversionBox.style.display = "block";
-
-        detectionToggle.checked = false;
-        detectionToggle.disabled = true;
-        canvas.style.display = "none"; // 캔버스 숨김
-        webcamStatus.textContent = 'Webcam Off';
-    }
-});
-
-// 탐지 온/오프 설정
-detectionToggle.addEventListener('click', () => {
-    if (detectionToggle.checked) {
-        startStreaming();
-    } else {
-        stopStreaming();
-    }
-});
-
-// 프레임 스트리밍 시작
-let streamingInterval = null;
-function startStreaming() {
-    if (webcamStream) {
-        canvas.style.display = "block"; // 캔버스 표시
-
-        streamingInterval = setInterval(() => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
-
-            // 캔버스 데이터를 Blob 형식으로 추출
-            canvas.toBlob(async (blob) => {
-                const formData = new FormData();
-                formData.append("file", blob, "frame.jpg");
-                try {
-                    const response = await fetch(serverUrl + '/detect_frame/', {
-                        method: "POST",
-                        body: formData,
-                    });
-                    const result = await response.json();
-
-                    // 탐지 결과 시각화
-                    displayDetections(result.detections);
-                } catch (error) {
-                    console.error("Error sending frame to server:", error);
-                }
-            }, "image/jpeg");
-        }, 1000);
+        alert(`유효하지 않은 파일 형태입니다: ${file.name}`);
     }
 }
 
-// 탐지 결과 시각화
-function displayDetections(detections) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
-
-    detections.forEach(detection => {
-        const { xmin, ymin, xmax, ymax, confidence, name } = detection;
-
-        ctx.strokeStyle = "red";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(xmin, ymin, xmax - xmin, ymax - ymin);
-
-        ctx.fillStyle = "red";
-        ctx.font = "14px Arial";
-        ctx.fillText(`${name} (${(confidence * 100).toFixed(1)}%)`, xmin, ymin - 10);
-    });
-}
-
-// 프레임 스트리밍 중지
-function stopStreaming() {
-    if (streamingInterval) {
-        clearInterval(streamingInterval);
-        streamingInterval = null;
-
-        // 캔버스 숨기기 및 지우기
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        canvas.style.display = "none";
-    }
-}
-webcam.addEventListener('playing', () => {
-    updateCanvasPosition(); // 웹캠이 로드된 후 캔버스 위치 동기화
-});
-
-window.addEventListener('resize', () => {
-    updateCanvasPosition(); // 창 크기가 변경될 때 캔버스 위치 재조정
-});
-
-function updateCanvasPosition() {
-    // 웹캠 위치를 기준으로 캔버스 위치 설정
-    const webcamRect = webcam.getBoundingClientRect();
-    canvas.style.top = `${webcamRect.top}px`;
-    canvas.style.left = `${webcamRect.left}px`;
-
-    // 크기도 웹캠과 동기화
-    canvas.style.width = `${webcamRect.width}px`;
-    canvas.style.height = `${webcamRect.height}px`;
-
-    // 캔버스 내부 크기 설정
-    canvas.width = webcam.videoWidth;
-    canvas.height = webcam.videoHeight;
-}
 indexSettiong();
