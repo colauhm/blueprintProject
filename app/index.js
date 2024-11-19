@@ -35,12 +35,12 @@ dropZone.addEventListener('dragleave', () => {
     dropZone.classList.remove('drag-over');
 });
 
-dropZone.addEventListener('drop', (event) => {
+dropZone.addEventListener('drop', async (event) => {
     event.preventDefault();
     dropZone.classList.remove('drag-over');
     const files = event.dataTransfer.files;
     if (files.length > 0) {
-        uploadAndPreview(files[0]); // 첫 번째 파일만 처리
+       await uploadAndPreview(files[0]); // 첫 번째 파일만 처리
     }
 });
 
@@ -48,9 +48,9 @@ dropZone.addEventListener('click', () => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/*'; // 이미지 파일만 선택 가능
-    fileInput.addEventListener('change', () => {
+    fileInput.addEventListener('change', async () => {
         if (fileInput.files.length > 0) {
-            uploadAndPreview(fileInput.files[0]); // 첫 번째 파일만 처리
+            await uploadAndPreview(fileInput.files[0]); // 첫 번째 파일만 처리
         }
     });
     fileInput.click();
@@ -114,6 +114,8 @@ async function uploadAndPreview(file) {
             
                 // 미리보기 제거
                 fileList.innerHTML = '';
+                //console.log(result.filename)
+                refreshFile(result.filename)
             });
 
             // 미리보기 컨테이너에 추가
@@ -131,5 +133,25 @@ async function uploadAndPreview(file) {
         alert(`유효하지 않은 파일 형태입니다: ${file.name}`);
     }
 }
+
+const refreshFile = async (filename) => {
+    try {
+        const response = await fetch(`${serverUrl}/delete/${filename}`, {
+            method: 'DELETE',
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Error: ${errorData.detail || 'Unknown error'}`);
+        }
+
+        const result = await response.json();
+        console.log(result.message); // 성공 메시지 출력
+        alert('새로고침 완료');
+    } catch (error) {
+        console.error('파일 삭제 중 오류 발생:', error.message);
+        alert(`파일 삭제 실패: ${error.message}`);
+    }
+};
 
 indexSettiong();
