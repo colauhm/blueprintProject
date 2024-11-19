@@ -9,7 +9,7 @@ import torch
 model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
 router = APIRouter(prefix="/api")
 
-@router.post("/upload_frame/")
+@router.post("/detect_frame/")
 async def upload_frame(file: UploadFile = File(...)):
     """
     클라이언트에서 업로드한 프레임에서 객체 탐지를 수행합니다.

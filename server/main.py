@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import webcam
+from .routers import detect
 #from .database import fileload
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 app = FastAPI()
@@ -13,7 +13,7 @@ app.add_middleware(
     allow_headers=["*"],  # 모든 HTTP 헤더를 허용합니다. 필요한 경우 원하는 헤더만 지정할 수 있습니다.
 )
 
-app.include_router(webcam.router)
+app.include_router(detect.router)
 # app.include_router(user.router)
 # app.include_router(comment.router)
 # app.include_router(fileload.router)

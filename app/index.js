@@ -1,4 +1,4 @@
-const serverUrl = "http://localhost:8088/api/upload_frame/";
+const serverUrl = "http://localhost:8088/api";
 const dropZone = document.getElementById('drop-zone');
 const fileList = document.getElementById('file-list');
 const webcamToggle = document.getElementById('webcam-toggle');
@@ -137,7 +137,7 @@ function startStreaming() {
                 const formData = new FormData();
                 formData.append("file", blob, "frame.jpg");
                 try {
-                    const response = await fetch(serverUrl, {
+                    const response = await fetch(serverUrl + '/detect_frame/', {
                         method: "POST",
                         body: formData,
                     });
