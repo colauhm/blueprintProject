@@ -75,6 +75,16 @@ function checkFileType(file) {
         throw new Error('Unsupported file type');
     }
 }
+// 변환 중 메시지 생성 및 스타일 적용
+const processingMessage = document.createElement('div');
+processingMessage.textContent = '변환 중입니다... 잠시만 기다려 주세요.';
+processingMessage.style.padding = '20px';
+processingMessage.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+processingMessage.style.color = 'white';
+processingMessage.style.fontSize = '18px';
+processingMessage.style.borderRadius = '10px';
+processingMessage.style.display = 'none'; // 초기에는 숨김 처리
+document.body.appendChild(processingMessage);
 
 async function uploadAndPreview(file, type) {
     const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi', 'webm'];
@@ -97,8 +107,14 @@ async function uploadAndPreview(file, type) {
             const result = await response.json();
             dropZone.style.display = 'none';
 
+            // 변환 중 메시지 표시
+            processingMessage.style.display = 'block';
+
             // Detect file after successful upload
             await detectFile(type, result.filename);
+
+            // 변환 중 메시지 숨김
+            processingMessage.style.display = 'none';
 
             // Generate preview, refresh button, and download button after detection
             const previewContainer = document.createElement('div');
@@ -107,11 +123,9 @@ async function uploadAndPreview(file, type) {
             previewContainer.style.alignItems = 'center';
             previewContainer.style.gap = '10px';
 
-            // Generate preview from ./after_detect folder
-            const processedFileUrl = `${serverUrl}/after_detect/${result.filename}`;
             if (type === 'image') {
                 const previewImage = document.createElement('img');
-                previewImage.src = processedFileUrl; // Use processed file for preview
+                previewImage.src = URL.createObjectURL(file);
                 previewImage.style.width = '100px';
                 previewImage.style.height = '100px';
                 previewImage.style.objectFit = 'cover';
@@ -119,7 +133,7 @@ async function uploadAndPreview(file, type) {
                 previewContainer.appendChild(previewImage);
             } else if (type === 'video') {
                 const previewVideo = document.createElement('video');
-                previewVideo.src = processedFileUrl; // Use processed file for preview
+                previewVideo.src = URL.createObjectURL(file);
                 previewVideo.controls = true;
                 previewVideo.style.width = '200px';
                 previewVideo.style.height = '150px';
@@ -151,7 +165,7 @@ async function uploadAndPreview(file, type) {
             downloadButton.style.border = 'none';
             downloadButton.style.borderRadius = '5px';
             downloadButton.style.cursor = 'pointer';
-            downloadButton.href = processedFileUrl; // Use processed file for download
+            downloadButton.href = `${serverUrl}/after_detect/${result.filename}`;
             downloadButton.download = result.filename;
 
             previewContainer.appendChild(refreshButton);
@@ -161,13 +175,14 @@ async function uploadAndPreview(file, type) {
             fileList.appendChild(previewContainer);
 
         } catch (error) {
+            // 변환 중 메시지 숨김
+            processingMessage.style.display = 'none';
             alert(`Error during file upload: ${file.name}, Error: ${error.message}`);
         }
     } else {
         alert(`Invalid file format: ${file.name}`);
     }
 }
-
 
 
 const detectFile = async (type, filename) => {
