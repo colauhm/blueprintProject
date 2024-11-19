@@ -2,11 +2,11 @@ from fastapi import  WebSocket, APIRouter
 import cv2
 import base64
 import asyncio
-from detect import model
+import torch
 router = APIRouter(prefix="/api")
 
 # 웹캠 연결
-
+model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
 
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
