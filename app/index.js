@@ -1,4 +1,5 @@
 const serverUrl = "http://localhost:8088/api";
+const ws = new WebSocket("ws://localhost:8088/api/ws"); // FastAPI WebSocket URL
 const dropZone = document.getElementById('drop-zone');
 const fileList = document.getElementById('file-list');
 const webcamToggle = document.getElementById('webcam-toggle');
@@ -7,15 +8,6 @@ const webcam = document.getElementById('webcam');
 const webcamStatus = document.getElementById('webcam-status');
 const fileConversionBox = document.getElementById('file-conversion-box');
 let webcamStream = null;
-
-// 캔버스 추가 (웹캠 프레임 처리용)
-const canvas = document.createElement('canvas');
-const ctx = canvas.getContext('2d');
-document.body.appendChild(canvas);
-canvas.style.position = "absolute";
-canvas.style.pointerEvents = "none"; // 클릭 이벤트 무시
-canvas.style.zIndex = "1"; // 웹캠 위에 표시
-canvas.style.display = "none"; // 초기에는 숨김 처리
 
 const indexSettiong = () => {
     fileConversionBox.style.display = "block";
@@ -49,6 +41,27 @@ webcamToggle.addEventListener('change', async () => {
         canvas.style.display = 'none';
         webcamStatus.textContent = 'Webcam Off';
         detectionToggle.disabled = true; // Disable detection toggle
+    }
+});
+
+detectionToggle.addEventListener('change', async () =>{
+    if(detectionToggle.checked){
+        ws.onmessage = (event) => {
+            // WebSocket 메시지를 받아 이미지로 변환
+            const base64Image = event.data;
+            videoStream.src = `data:image/jpeg;base64,${base64Image}`;
+        };
+        
+        ws.onclose = () => {
+            console.log("WebSocket closed.");
+        };
+        
+        ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+    }
+    else{
+        ws.close();
     }
 });
 
