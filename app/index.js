@@ -1,6 +1,5 @@
 const serverUrl = "http://localhost:8088/api";
 const videoStream = document.getElementById("video-stream");
-const ws = new WebSocket("ws://localhost:8088/api/ws"); // FastAPI WebSocket URL
 const dropZone = document.getElementById('drop-zone');
 const fileList = document.getElementById('file-list');
 const webcamToggle = document.getElementById('webcam-toggle');
@@ -9,6 +8,7 @@ const webcam = document.getElementById('webcam');
 const webcamStatus = document.getElementById('webcam-status');
 const fileConversionBox = document.getElementById('file-conversion-box');
 let webcamStream = null;
+let ws = null; // WebSocket 객체를 전역에서 재사용 가능하도록 선언
 
 const indexSettiong = () => {
     fileConversionBox.style.display = "block";
@@ -20,59 +20,75 @@ const indexSettiong = () => {
 
 const toggleControllore = async () => {
     if (webcamToggle.checked) {
-        if (detectionToggle.checked) {
-            if (webcamStream) {
-                const tracks = webcamStream.getTracks();
-                tracks.forEach(track => track.stop());
-                webcamStream = null;
-
-                webcam.style.display = 'none';
-                webcamStatus.textContent = 'Webcam Off';
-                detectionToggle.disabled = true;
-            }
-
-            if (!ws) {
-                ws = new WebSocket('ws://your-websocket-url');
-            }
-
-            if (!ws._handlersSet) {
-                ws.onmessage = (event) => {
-                    const base64Image = event.data;
-                    videoStream.src = `data:image/jpeg;base64,${base64Image}`;
-                };
-
-                ws.onclose = () => console.log("WebSocket closed.");
-                ws.onerror = (error) => console.error("WebSocket error:", error);
-
-                ws._handlersSet = true;
-            }
-        } else {
-            if (ws) {
-                ws.close();
-                ws = null;
+        if(detectionToggle.checked){
+            const tracks = webcamStream.getTracks();
+            tracks.forEach(track => track.stop());
+            webcamStream = null;
+        }
+        else{
+            try {
+                webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                webcam.srcObject = webcamStream;
+                webcam.style.display = 'block';
+                webcamStatus.textContent = 'Webcam On';
+                detectionToggle.disabled = false; // Enable detection toggle
+                
+            } catch (error) {
+                alert('Failed to access webcam: ' + error.message);
+                webcamToggle.checked = false;
             }
         }
     } else {
-        try {
-            webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
-            webcam.srcObject = webcamStream;
-            webcam.style.display = 'block';
-            webcamStatus.textContent = 'Webcam On';
-            detectionToggle.disabled = false; // Enable detection toggle
-        } catch (error) {
-            alert(`Failed to access webcam. Error: ${error.name}, Message: ${error.message}`);
-            webcamToggle.checked = false;
+        if (webcamStream) {
+            const tracks = webcamStream.getTracks();
+            tracks.forEach(track => track.stop());
+            webcamStream = null;
         }
+        webcam.style.display = 'none';
+        webcamStatus.textContent = 'Webcam Off';
+        detectionToggle.disabled = true; // Disable detection toggle
+        detectionToggle.checked = false;
     }
+    console.log(detectionToggle.checked);
 };
 
 // Webcam toggle functionality
-webcamToggle.addEventListener('change', async () => {
+webcamToggle.addEventListener('change', () => {
     toggleControllore();
 });
 
-detectionToggle.addEventListener('change', async () =>{
-    toggleControllore();
+detectionToggle.addEventListener('change', () => {
+    if (detectionToggle.checked) {
+        // WebSocket 연결을 새로 생성
+        ws = new WebSocket("ws://localhost:8088/api/ws");
+
+        ws.onmessage = (event) => {
+            // WebSocket 메시지를 받아 이미지로 변환
+            const base64Image = event.data;
+            videoStream.src = `data:image/jpeg;base64,${base64Image}`;
+        };
+        
+        ws.onopen = () => {
+            console.log("WebSocket connection established.");
+        };
+        
+        ws.onclose = () => {
+            console.log("WebSocket closed.");
+        };
+        
+        ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+    } else {
+        if (ws) {
+            ws.close(); // WebSocket 연결 닫기
+            ws = null; // WebSocket 객체 초기화
+        }
+    }
+
+    setTimeout(() => {
+        toggleControllore();
+    }, 1000); // 1000ms = 1초
 });
 
 // 드래그앤드롭 관련 이벤트

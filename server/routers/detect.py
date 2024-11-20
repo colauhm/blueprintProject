@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, UploadFile, File
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional
@@ -12,6 +12,7 @@ model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
 router = APIRouter(prefix="/api")
 
 class detectData(BaseModel):
+    file: UploadFile = File(...)
     type : str
     fileName : str
 
@@ -24,7 +25,22 @@ async def upload_frame(data:detectData):
     try:
      
         if data.type == 'webcam':
-            pass
+            contents = await data.file.read()
+            # Numpy 배열로 변환
+            np_arr = np.frombuffer(contents, np.uint8)
+            frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+            # YOLO 모델을 사용한 객체 탐지
+            results = model(frame)
+
+            # 탐지 결과 처리
+            detections = results.pandas().xyxy[0].to_dict(orient="records")  # 탐지 결과를 딕셔너리로 변환
+
+            # 탐지 결과 이미지 생성 (시각화 용도)
+            detection_img = np.squeeze(results.render())  # 탐지 결과가 그려진 이미지
+            #cv2.imwrite("detected_frame.jpg", detection_img)  # 테스트용으로 이미지 저장
+
+            return JSONResponse({"detections": detections})
         else:
             
             BEFORE_DETECT_FOLDER = "./before_detect"
