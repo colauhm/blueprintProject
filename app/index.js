@@ -18,9 +18,41 @@ const indexSettiong = () => {
     detectionToggle.disabled = true;
 };
 
-// Webcam toggle functionality
-webcamToggle.addEventListener('change', async () => {
+const toggleControllore = async () => {
     if (webcamToggle.checked) {
+        if (detectionToggle.checked) {
+            if (webcamStream) {
+                const tracks = webcamStream.getTracks();
+                tracks.forEach(track => track.stop());
+                webcamStream = null;
+
+                webcam.style.display = 'none';
+                webcamStatus.textContent = 'Webcam Off';
+                detectionToggle.disabled = true;
+            }
+
+            if (!ws) {
+                ws = new WebSocket('ws://your-websocket-url');
+            }
+
+            if (!ws._handlersSet) {
+                ws.onmessage = (event) => {
+                    const base64Image = event.data;
+                    videoStream.src = `data:image/jpeg;base64,${base64Image}`;
+                };
+
+                ws.onclose = () => console.log("WebSocket closed.");
+                ws.onerror = (error) => console.error("WebSocket error:", error);
+
+                ws._handlersSet = true;
+            }
+        } else {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+    } else {
         try {
             webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
             webcam.srcObject = webcamStream;
@@ -28,44 +60,19 @@ webcamToggle.addEventListener('change', async () => {
             webcamStatus.textContent = 'Webcam On';
             detectionToggle.disabled = false; // Enable detection toggle
         } catch (error) {
-            alert('Failed to access webcam: ' + error.message);
+            alert(`Failed to access webcam. Error: ${error.name}, Message: ${error.message}`);
             webcamToggle.checked = false;
         }
-    } else {
-        if (webcamStream) {
-            const tracks = webcamStream.getTracks();
-            tracks.forEach(track => track.stop());
-            webcamStream = null;
-        }
-        webcam.style.display = 'none';
-        webcamStatus.textContent = 'Webcam Off';
-        detectionToggle.disabled = true; // Disable detection toggle
     }
+};
+
+// Webcam toggle functionality
+webcamToggle.addEventListener('change', async () => {
+    toggleControllore();
 });
 
 detectionToggle.addEventListener('change', async () =>{
-    if(detectionToggle.checked){
-        
-        const tracks = webcamStream.getTracks();
-        tracks.forEach(track => track.stop());
-        webcamStream = null;
-        ws.onmessage = (event) => {
-            // WebSocket 메시지를 받아 이미지로 변환
-            const base64Image = event.data;
-            videoStream.src = `data:image/jpeg;base64,${base64Image}`;
-        };
-        
-        ws.onclose = () => {
-            console.log("WebSocket closed.");
-        };
-        
-        ws.onerror = (error) => {
-            console.error("WebSocket error:", error);
-        };
-    }
-    else{
-        ws.close();
-    }
+    toggleControllore();
 });
 
 // 드래그앤드롭 관련 이벤트
