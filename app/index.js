@@ -9,24 +9,29 @@ const webcamStatus = document.getElementById('webcam-status');
 const fileConversionBox = document.getElementById('file-conversion-box');
 let webcamStream = null;
 let ws = null; // WebSocket 객체를 전역에서 재사용 가능하도록 선언
-
+ 
 const indexSettiong = () => {
     fileConversionBox.style.display = "block";
     webcam.style.display = 'block';
     webcamStatus.textContent = 'Webcam Off';
     webcamToggle.checked = false;
     detectionToggle.disabled = true;
+   videoStream.style.display = 'none'
 };
 
 const toggleControllore = async () => {
     if (webcamToggle.checked) {
         if(detectionToggle.checked){
+            webcam.style.display = 'none';
+            videoStream.style.display = 'block'
             const tracks = webcamStream.getTracks();
             tracks.forEach(track => track.stop());
             webcamStream = null;
         }
         else{
             try {
+                videoStream.style.display = 'none'
+                videoStream.src = ''
                 webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
                 webcam.srcObject = webcamStream;
                 webcam.style.display = 'block';
@@ -44,12 +49,11 @@ const toggleControllore = async () => {
             tracks.forEach(track => track.stop());
             webcamStream = null;
         }
-        webcam.style.display = 'none';
+        videoStream.style.display = 'none'
         webcamStatus.textContent = 'Webcam Off';
         detectionToggle.disabled = true; // Disable detection toggle
         detectionToggle.checked = false;
     }
-    console.log(detectionToggle.checked);
 };
 
 // Webcam toggle functionality
